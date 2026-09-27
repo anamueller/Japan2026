@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fff7f5;
+  --foreground: #1c1917;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-jp-red: #bc002d;
+  --color-jp-ink: #1c1917;
+  --color-jp-paper: #fff7f5;
+  --color-jp-navy: #1b4f72;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+  font-family: inherit;
+}
+
+.leaflet-container img {
+  max-width: none;
+}
