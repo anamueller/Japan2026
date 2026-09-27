@@ -6,12 +6,14 @@ import {
   Clock,
   ExternalLink,
   Hotel,
+  Hourglass,
   Pencil,
   Plane,
   Plus,
+  TrainFront,
   Trash2,
-  X,
 } from "lucide-react";
+import { RouteFlags } from "@/components/CountryFlag";
 import {
   formatDate,
   formatDateTime,
@@ -19,7 +21,7 @@ import {
   type TimeZoneId,
 } from "@/lib/dates";
 import {
-  airportFlag,
+  airportCountry,
   buildFlightDays,
   travelerHeader,
   emptyFlight,
@@ -77,14 +79,9 @@ export function OverviewPanel({
   }
 
   return (
-    <section className="min-h-0 flex-1 overflow-y-auto bg-jp-paper px-8 py-6">
+    <section className="min-h-0 flex-1 overflow-y-auto bg-jp-paper px-4 py-4 md:px-8 md:py-6">
       <div className="mx-auto max-w-6xl">
-        <h2 className="text-lg font-semibold text-stone-900">Visão geral 🇯🇵</h2>
-        <p className="mt-1 text-sm text-stone-500">
-          Voos e acomodações na ordem da viagem.
-        </p>
-
-        <div className="mt-6 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-stone-800">Linha do tempo</h3>
           <button
             type="button"
@@ -179,7 +176,7 @@ function FlightTimeline({
         {days.map((day) => (
           <div
             key={day.date}
-            className={`flex flex-col items-center px-2 ${day.ellipsis ? "w-12" : "w-56"}`}
+            className={`flex flex-col items-center px-2 ${day.ellipsis ? "w-10" : "w-48 sm:w-56"}`}
           >
             <p className="h-5 text-xs font-medium text-stone-500">
               {day.ellipsis ? "…" : formatDayMonth(day.date)}
@@ -192,36 +189,64 @@ function FlightTimeline({
               }`}
             />
             <div className="flex w-full flex-col gap-2">
-              {day.cards.map((card) => (
-                <button
-                  key={card.id}
-                  type="button"
-                  onClick={() => onOpen(card.id)}
-                  className="overflow-hidden rounded-xl border border-rose-100 bg-white text-left shadow-sm"
-                >
-                  <div
-                    className="flex items-center gap-2 px-2.5 py-1.5"
-                    style={travelerHeader(card.traveler)}
+              {day.cards.map((card) => {
+                const tone = travelerHeader(card.traveler);
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => onOpen(card.id)}
+                    className="w-full overflow-hidden rounded-xl border border-rose-100 bg-white text-left shadow-sm"
                   >
-                    <span className="text-sm leading-none">{airportFlag(card.from)}</span>
-                    <p className="truncate text-xs font-semibold">{card.traveler}</p>
-                  </div>
-                  <div className="px-2.5 py-2">
-                    <p className="text-[10px] text-stone-400">
-                      {card.airline} {card.number} · {card.from}
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-                      {card.departTime}
-                      <Plane className="h-3.5 w-3.5 text-jp-red" />
-                      {card.to}
-                    </p>
-                    <p className="mt-0.5 text-[10px] text-stone-500">
-                      {card.arriveTime} · {card.duration}
-                      {card.connection ? ` · conexão ${card.connection}` : ""}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                    <div
+                      className="flex items-center gap-1.5 px-2.5 py-1.5"
+                      style={{ background: tone.background, color: tone.color }}
+                    >
+                      <RouteFlags
+                        from={airportCountry(card.from)}
+                        to={airportCountry(card.to)}
+                        className="h-2 w-3"
+                      />
+                      <p className="min-w-0 truncate text-xs font-semibold">{card.traveler}</p>
+                    </div>
+                    <div className="px-2.5 py-2">
+                      <p className="text-[10px] text-stone-400">
+                        {[card.airline, card.number].filter(Boolean).join("-")}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-stone-900">
+                        <span className="tabular-nums">
+                          {card.departTime} {card.from}
+                        </span>
+                        <Plane className="h-3.5 w-3.5 shrink-0" style={{ color: tone.accent }} />
+                        <span className="tabular-nums">
+                          {card.arriveTime}
+                          {card.plusDays > 0 ? (
+                            <sup className="ml-px text-[8px] font-semibold text-jp-red">
+                              +{card.plusDays}
+                            </sup>
+                          ) : null}{" "}
+                          {card.to}
+                        </span>
+                      </p>
+                      <p className="mt-1 flex min-h-4 items-center gap-2.5 text-[10px] text-stone-500">
+                        <span className="inline-flex items-center gap-0.5">
+                          <Clock className="h-3 w-3" />
+                          {card.duration}
+                        </span>
+                        {card.connection ? (
+                          <span
+                            className="inline-flex items-center gap-0.5"
+                            title="Tempo de conexão"
+                          >
+                            <Hourglass className="h-3 w-3" />
+                            {card.connection}
+                          </span>
+                        ) : null}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -244,18 +269,10 @@ function FlightEditor({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/40 p-3 sm:items-center sm:p-4">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-stone-900">Editar voo</h3>
-          <button
-            type="button"
-            aria-label="Fechar"
-            onClick={onClose}
-            className="rounded-md p-1 text-stone-400 hover:bg-rose-50 hover:text-jp-red"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Viajante" value={traveler} onChange={(value) => onChange({ traveler: value })} />
@@ -299,7 +316,7 @@ function FlightEditor({
             onClick={onClose}
             className="rounded-xl bg-jp-red px-3 py-1.5 text-xs font-medium text-white"
           >
-            Fechar
+            Salvar
           </button>
         </div>
       </div>
@@ -354,7 +371,7 @@ function StayPreview({
             onClick={() => setEditing(false)}
             className="rounded-xl bg-jp-red px-3 py-1.5 text-xs font-medium text-white"
           >
-            Fechar
+            Salvar
           </button>
         </div>
       </article>
@@ -399,6 +416,12 @@ function StayPreview({
               <Clock className="h-3 w-3 text-stone-400" />
               {stay.checkIn.slice(11, 16)} – {stay.checkOut.slice(11, 16)}
             </span>
+            {stay.station ? (
+              <span className="inline-flex items-center gap-1">
+                <TrainFront className="h-3 w-3 text-stone-400" />
+                {stay.station}
+              </span>
+            ) : null}
           </div>
           {stay.link && (
             <a

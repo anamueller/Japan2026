@@ -3,12 +3,13 @@ import type { PlaceDetails, PlaceSuggestion } from "@/lib/places";
 export async function searchPlaces(
   input: string,
   sessionToken?: string,
+  includedPrimaryTypes?: string[],
 ): Promise<PlaceSuggestion[]> {
   if (input.trim().length < 2) return [];
   const response = await fetch("/api/places/autocomplete", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ input, sessionToken }),
+    body: JSON.stringify({ input, sessionToken, includedPrimaryTypes }),
   });
   if (!response.ok) return [];
   const payload = (await response.json()) as { suggestions?: PlaceSuggestion[] };

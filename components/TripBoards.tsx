@@ -8,6 +8,9 @@ import { climateLabel, type WeatherDay } from "@/lib/weather";
 
 export function WeatherBoard({ cities }: { cities: CityStay[] }) {
   const [rows, setRows] = useState<{ city: CityStay; days: WeatherDay[] }[]>([]);
+  const citiesKey = cities
+    .map((city) => `${city.id}:${city.lat},${city.lng}:${city.start}:${city.end}`)
+    .join("|");
 
   useEffect(() => {
     let live = true;
@@ -25,7 +28,7 @@ export function WeatherBoard({ cities }: { cities: CityStay[] }) {
     return () => {
       live = false;
     };
-  }, [cities]);
+  }, [citiesKey]);
 
   return (
     <div>
@@ -33,17 +36,19 @@ export function WeatherBoard({ cities }: { cities: CityStay[] }) {
         <CloudSun className="h-4 w-4 text-jp-red" />
         Tempo por cidade
       </h3>
-      <div className="mt-3 flex w-max max-w-full gap-3 overflow-x-auto pb-1">
+      <div className="mt-3 flex flex-wrap gap-3">
         {rows.map((row) => (
           <article
             key={row.city.id}
             className="w-fit rounded-2xl border border-rose-100 bg-white px-3 py-2.5 shadow-sm"
           >
-            <p className="text-sm font-semibold text-stone-900">{row.city.name}</p>
+            <p className="text-sm font-semibold text-stone-900">
+              {row.city.name || "Nova cidade"}
+            </p>
             <p className="text-[11px] leading-tight text-stone-500">
               {climateLabel(row.days)}
             </p>
-            <div className="mt-2 flex w-max gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {row.days.map((day) => (
                 <div
                   key={day.date}
@@ -83,6 +88,9 @@ export function TransitBoard({
   const hops = cityHops(cities);
   const [rows, setRows] = useState<{ key: string; duration: string; summary: string }[]>([]);
   const cityWidth = `${Math.max(...cities.map((city) => city.name.length), 8) + 2}ch`;
+  const hopsKey = hops
+    .map((hop) => `${hop.from.id}:${hop.from.lat},${hop.from.lng}->${hop.to.id}:${hop.to.lat},${hop.to.lng}:${hop.date}`)
+    .join("|");
 
   useEffect(() => {
     let live = true;
@@ -94,6 +102,8 @@ export function TransitBoard({
           body: JSON.stringify({
             fromId: hop.from.id,
             toId: hop.to.id,
+            fromName: hop.from.name,
+            toName: hop.to.name,
             fromLat: hop.from.lat,
             fromLng: hop.from.lng,
             toLat: hop.to.lat,
@@ -117,9 +127,11 @@ export function TransitBoard({
     return () => {
       live = false;
     };
-  }, [cities]);
+  }, [hopsKey]);
 
-  if (hops.length === 0) return null;
+  const ordered = hops.length
+    ? [hops[0].from, ...hops.map((hop) => hop.to)]
+    : [...cities].sort((left, right) => left.start.localeCompare(right.start));
 
   return (
     <div>
@@ -130,32 +142,28 @@ export function TransitBoard({
         </h3>
         {action}
       </div>
-      <div className="mt-3 overflow-x-auto">
-        <div className="flex min-w-max items-start gap-2">
-          {hops.map((hop, index) => {
-            const row = rows.find((item) => item.key === `${hop.from.id}-${hop.to.id}`);
-            return (
-              <div key={`${hop.from.id}-${hop.to.id}`} className="flex items-start gap-2">
-                {index === 0 && (
-                  <CityPill
-                    city={hop.from}
-                    width={cityWidth}
-                    onClick={() => onSelectCity?.(hop.from.id)}
-                  />
-                )}
+      <div className="mt-3 flex flex-wrap items-start gap-2">
+        {ordered.map((city, index) => {
+          const hop = index === 0 ? null : hops[index - 1];
+          const row = hop
+            ? rows.find((item) => item.key === `${hop.from.id}-${hop.to.id}`)
+            : null;
+          return (
+            <div key={city.id} className="flex flex-wrap items-start gap-2">
+              {hop ? (
                 <HopPill
                   duration={row?.duration ?? "…"}
                   summary={row?.summary ?? ""}
                 />
-                <CityPill
-                  city={hop.to}
-                  width={cityWidth}
-                  onClick={() => onSelectCity?.(hop.to.id)}
-                />
-              </div>
-            );
-          })}
-        </div>
+              ) : null}
+              <CityPill
+                city={city}
+                width={cityWidth}
+                onClick={() => onSelectCity?.(city.id)}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -192,7 +200,7 @@ function CityPill({
         style={{ width }}
         className="rounded-full bg-jp-red px-3 py-1.5 text-center text-xs font-semibold text-white"
       >
-        {city.name}
+        {city.name || "Nova cidade"}
       </button>
       <p className="mt-1 text-[10px] text-stone-400">
         {formatStayRange(city.start, city.end)}

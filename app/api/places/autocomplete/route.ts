@@ -4,6 +4,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     input?: string;
     sessionToken?: string;
+    includedPrimaryTypes?: string[];
   };
   const input = body.input?.trim() ?? "";
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
@@ -24,6 +25,9 @@ export async function POST(request: Request) {
         languageCode: "pt-BR",
         regionCode: "JP",
         includedRegionCodes: ["jp"],
+        includedPrimaryTypes: body.includedPrimaryTypes?.length
+          ? body.includedPrimaryTypes
+          : undefined,
         sessionToken: body.sessionToken,
       }),
     },

@@ -6,6 +6,7 @@ import {
   MapPin,
   Plane,
 } from "lucide-react";
+import { CountryFlag } from "@/components/CountryFlag";
 import type { CityStay } from "@/lib/trip";
 
 export type AppView =
@@ -16,16 +17,32 @@ export type AppView =
 type SidebarProps = {
   cities: CityStay[];
   view: AppView;
+  open: boolean;
   onView: (view: AppView) => void;
+  onClose: () => void;
 };
 
-export function Sidebar({ cities, view, onView }: SidebarProps) {
+export function Sidebar({ cities, view, open, onView, onClose }: SidebarProps) {
   return (
-    <aside className="flex w-56 shrink-0 flex-col bg-jp-ink px-4 py-5 text-rose-100">
-      <p className="mb-6 px-2 text-sm font-semibold tracking-wide text-white">
-        Trip: Japan 🇯🇵
+    <>
+      {open ? (
+        <button
+          type="button"
+          aria-label="Fechar menu"
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-stone-900/40 lg:hidden"
+        />
+      ) : null}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] flex-col overflow-y-auto bg-jp-ink px-4 py-5 text-rose-100 transition-transform lg:static lg:z-0 lg:w-56 lg:max-w-none lg:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+      <p className="mb-6 flex items-center gap-2 px-2 text-sm font-semibold tracking-wide text-white">
+        Trip: Japan
+        <CountryFlag iso="JP" className="h-3.5 w-[1.3rem]" title="Japão" />
       </p>
-      <nav className="flex flex-col gap-1 text-sm">
+      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto text-sm">
         <NavItem
           icon={LayoutDashboard}
           label="Visão Geral"
@@ -76,6 +93,7 @@ export function Sidebar({ cities, view, onView }: SidebarProps) {
         </div>
       </nav>
     </aside>
+    </>
   );
 }
 

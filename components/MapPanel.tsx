@@ -67,7 +67,7 @@ export function MapPanel({
   }, [pointsKey]);
 
   return (
-    <aside className="relative hidden h-full w-[46%] shrink-0 overflow-hidden bg-slate-200 lg:block">
+    <aside className="relative h-64 w-full shrink-0 overflow-hidden bg-slate-200 lg:h-full lg:w-[46%]">
       <div className="absolute inset-0">
         {googleMapsKey ? (
           <GoogleDayMap

@@ -19,15 +19,15 @@ export async function POST(request: Request) {
   };
 
   const fallback = fallbackHop(body.fromId ?? "", body.toId ?? "");
+  const typicalDate = (body.date ?? "2026-11-14").replace(/^\d{4}/, "2025");
   const hitKey = cacheKey({
     kind: "transit",
-    fromId: body.fromId,
-    toId: body.toId,
+    via: "typical-2025",
     fromLat: body.fromLat,
     fromLng: body.fromLng,
     toLat: body.toLat,
     toLng: body.toLng,
-    date: body.date,
+    date: typicalDate,
   });
   const cached = cacheGet<{ duration: string; summary: string }>(hitKey);
   if (cached) return Response.json(cached);
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       location: { latLng: { latitude: body.toLat, longitude: body.toLng } },
     },
     travelMode: "TRANSIT",
-    departureTime: `${body.date ?? "2026-11-14"}T11:00:00+09:00`,
+    departureTime: `${typicalDate}T11:00:00+09:00`,
     computeAlternativeRoutes: true,
     languageCode: "pt-BR",
     regionCode: "JP",
@@ -69,12 +69,10 @@ export async function POST(request: Request) {
       },
     );
     if (!response.ok) {
-      return Response.json(
-        cacheSet(hitKey, {
-          duration: formatDurationSeconds(fallback.seconds),
-          summary: fallback.summary,
-        }),
-      );
+      return Response.json({
+        duration: formatDurationSeconds(fallback.seconds),
+        summary: fallback.summary,
+      });
     }
     const data = (await response.json()) as {
       routes?: { duration?: string; description?: string }[];
@@ -84,12 +82,10 @@ export async function POST(request: Request) {
     )[0];
     const seconds = parseDuration(fastest?.duration);
     if (!seconds) {
-      return Response.json(
-        cacheSet(hitKey, {
-          duration: formatDurationSeconds(fallback.seconds),
-          summary: fallback.summary,
-        }),
-      );
+      return Response.json({
+        duration: formatDurationSeconds(fallback.seconds),
+        summary: fallback.summary,
+      });
     }
     return Response.json(
       cacheSet(hitKey, {
@@ -98,11 +94,9 @@ export async function POST(request: Request) {
       }),
     );
   } catch {
-    return Response.json(
-      cacheSet(hitKey, {
-        duration: formatDurationSeconds(fallback.seconds),
-        summary: fallback.summary,
-      }),
-    );
+    return Response.json({
+      duration: formatDurationSeconds(fallback.seconds),
+      summary: fallback.summary,
+    });
   }
 }

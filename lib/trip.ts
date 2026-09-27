@@ -42,6 +42,7 @@ export type Stay = {
   lat: number;
   lng: number;
   image: string;
+  station: string;
 };
 
 export const defaultCities: CityStay[] = [
@@ -181,6 +182,7 @@ export const defaultStays: Stay[] = [
     lat: 35.7128,
     lng: 139.7037,
     image: "",
+    station: "",
   },
   {
     id: "kyoto-stay",
@@ -194,6 +196,7 @@ export const defaultStays: Stay[] = [
     lat: 34.6628,
     lng: 135.5028,
     image: "",
+    station: "",
   },
   {
     id: "hiroshima-stay",
@@ -207,6 +210,7 @@ export const defaultStays: Stay[] = [
     lat: 34.3963,
     lng: 132.4594,
     image: "",
+    station: "",
   },
   {
     id: "gifu-stay",
@@ -220,6 +224,7 @@ export const defaultStays: Stay[] = [
     lat: 36.146,
     lng: 137.2522,
     image: "",
+    station: "",
   },
   {
     id: "hakone-stay",
@@ -233,6 +238,7 @@ export const defaultStays: Stay[] = [
     lat: 35.2324,
     lng: 139.1069,
     image: "",
+    station: "",
   },
 ];
 
@@ -269,29 +275,44 @@ export function emptyStay(): Stay {
     lat: 35.68,
     lng: 139.76,
     image: "",
+    station: "",
   };
 }
 
-const AIRPORT_FLAG: Record<string, string> = {
-  GRU: "🇧🇷",
-  GIG: "🇧🇷",
-  CGH: "🇧🇷",
-  BOS: "🇺🇸",
-  JFK: "🇺🇸",
-  EWR: "🇺🇸",
-  NRT: "🇯🇵",
-  HND: "🇯🇵",
-  KIX: "🇯🇵",
-  ITM: "🇯🇵",
+const AIRPORT_COUNTRY: Record<string, string> = {
+  GRU: "BR",
+  GIG: "BR",
+  CGH: "BR",
+  BOS: "US",
+  JFK: "US",
+  EWR: "US",
+  NRT: "JP",
+  HND: "JP",
+  KIX: "JP",
+  ITM: "JP",
 };
 
-export function airportFlag(code: string): string {
-  return AIRPORT_FLAG[code.toUpperCase()] || "🛫";
+export function airportCountry(code: string): string {
+  return AIRPORT_COUNTRY[code.toUpperCase()] ?? "";
 }
 
 export function stayDisplayName(name: string): string {
   const cleaned = name.replace(/airbnb\s*/gi, "").trim();
   return cleaned || "Acomodação";
+}
+
+export function applyStayEnrichment(current: Stay[], extras: Stay[]): Stay[] {
+  return current.map((stay) => {
+    const extra = extras.find((item) => item.id === stay.id);
+    if (!extra) return stay;
+    return {
+      ...stay,
+      image: stay.image || extra.image,
+      station: stay.station || extra.station,
+      lat: stay.lat || extra.lat,
+      lng: stay.lng || extra.lng,
+    };
+  });
 }
 
 const TRAVELER_TONE: Record<string, { bg: string; text: string }> = {
@@ -301,16 +322,21 @@ const TRAVELER_TONE: Record<string, { bg: string; text: string }> = {
   manu: { bg: "#92400e", text: "#fff7ed" },
 };
 
-export function travelerHeader(label: string): { background: string; color: string } {
+export function travelerHeader(label: string): {
+  background: string;
+  color: string;
+  accent: string;
+} {
   const tones = label
     .split(" & ")
     .map((name) => TRAVELER_TONE[name.trim().toLowerCase()] ?? { bg: "#1c1917", text: "#fff" });
   if (tones.length === 1) {
-    return { background: tones[0].bg, color: tones[0].text };
+    return { background: tones[0].bg, color: tones[0].text, accent: tones[0].bg };
   }
   return {
     background: `linear-gradient(90deg, ${tones.map((tone) => tone.bg).join(", ")})`,
     color: "#1c1917",
+    accent: tones[0].bg,
   };
 }
 
@@ -378,6 +404,7 @@ export type TimelineFlightCard = {
   to: string;
   departTime: string;
   arriveTime: string;
+  plusDays: number;
   duration: string;
   connection: string | null;
   departDate: string;
@@ -422,6 +449,7 @@ export function nextConnection(flight: Flight, all: Flight[]): string | null {
     .filter((row) => row.at.getTime() >= arrive.getTime())
     .sort((left, right) => left.at.getTime() - right.at.getTime())[0];
   if (!next) return null;
+  if (next.at.getTime() - arrive.getTime() > 3 * 86_400_000) return null;
   return hoursBetween(arrive, next.at);
 }
 
@@ -441,6 +469,10 @@ export function buildFlightDays(flights: Flight[]): TimelineDay[] {
       to: flight.to || "—",
       departTime: formatClock(flight.departAt),
       arriveTime: formatClock(flight.arriveAt),
+      plusDays: calendarDaysBetween(
+        flight.departAt.slice(0, 10),
+        flight.arriveAt.slice(0, 10),
+      ),
       duration: hoursBetween(depart, arrive),
       connection: nextConnection(flight, flights),
       departDate: flight.departAt.slice(0, 10),

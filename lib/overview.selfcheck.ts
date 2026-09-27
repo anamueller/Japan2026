@@ -1,7 +1,7 @@
 import { formatDurationSeconds, fallbackHop } from "@/lib/transit";
 import { climateLabel, weatherEmoji, shiftYear, mapDaily } from "@/lib/weather";
 import { cacheGet, cacheKey, cacheSet } from "@/lib/google-cache";
-import { airportFlag, buildFlightDays, defaultFlights, nextConnection, stayDisplayName, travelerHeader } from "@/lib/trip";
+import { airportCountry, applyStayEnrichment, buildFlightDays, defaultFlights, defaultStays, nextConnection, stayDisplayName, travelerHeader } from "@/lib/trip";
 import { formatClock, formatDayMonth, formatNumericDate, formatStayRange } from "@/lib/dates";
 
 if (weatherEmoji(0) !== "☀️") throw new Error("clear sky emoji");
@@ -14,6 +14,14 @@ const days = buildFlightDays(defaultFlights);
 if (days[0]?.cards.length !== 2) throw new Error(`first day cards ${days[0]?.cards.length}`);
 if (days[0]?.cards[0]?.traveler !== "Ana & Marcelo") {
   throw new Error(days[0]?.cards[0]?.traveler);
+}
+if (days[0]?.cards[0]?.plusDays !== 1) throw new Error("plus day");
+if (
+  buildFlightDays([
+    { ...defaultFlights[0], id: "same", departAt: "2026-11-08T10:00", arriveAt: "2026-11-08T14:00" },
+  ])[0]?.cards[0]?.plusDays !== 0
+) {
+  throw new Error("same day plus");
 }
 const connection = nextConnection(defaultFlights[0], defaultFlights);
 if (connection !== "5h 30min") throw new Error(`connection ${connection}`);
@@ -52,8 +60,25 @@ if (formatNumericDate("2026-11-11") !== "11/11/2026") throw new Error("numeric d
 if (formatStayRange("2026-11-10", "2026-11-14") !== "10-14/11") {
   throw new Error(formatStayRange("2026-11-10", "2026-11-14"));
 }
-if (airportFlag("GRU") !== "🇧🇷") throw new Error("flag");
+if (airportCountry("GRU") !== "BR") throw new Error("flag");
+if (nextConnection(defaultFlights[1], defaultFlights) !== null) {
+  throw new Error("japan arrival connection");
+}
+if (
+  nextConnection(defaultFlights[1], [
+    ...defaultFlights,
+    { ...defaultFlights[1], id: "back", departAt: "2026-11-22T10:00", arriveAt: "2026-11-22T22:00" },
+  ]) !== null
+) {
+  throw new Error("return is not a connection");
+}
 if (stayDisplayName("Airbnb Takadanobaba") !== "Takadanobaba") throw new Error("stay name");
+const kept = applyStayEnrichment(
+  [{ ...defaultStays[0], name: "Meu Airbnb" }],
+  [{ ...defaultStays[0], name: "Nome do Google", image: "photo.jpg", station: "Takadanobaba" }],
+);
+if (kept[0]?.name !== "Meu Airbnb") throw new Error("enrich kept name");
+if (kept[0]?.station !== "Takadanobaba") throw new Error("enrich filled station");
 if (travelerHeader("Ana").background !== "#fecdd3") throw new Error("ana color");
 if (travelerHeader("Marcelo").background !== "#7dd3fc") throw new Error("marcelo color");
 if (travelerHeader("Lahana").background !== "#d8b4fe") throw new Error("lahana color");

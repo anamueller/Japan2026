@@ -52,7 +52,7 @@ export function ItineraryPanel({
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-jp-paper">
-      <div className="shrink-0 border-b border-slate-200 bg-white px-6 py-4">
+      <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 md:px-6 md:py-4">
         <h2 className="text-lg font-semibold text-slate-900">
           Roteiro & Ideias
         </h2>
@@ -72,13 +72,13 @@ export function ItineraryPanel({
         </div>
       </div>
 
-      <div className="shrink-0 space-y-3 border-b border-slate-200 px-6 py-4">
-        <div className="flex items-center justify-between gap-3">
+      <div className="shrink-0 space-y-3 border-b border-slate-200 px-4 py-3 md:px-6 md:py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
             <CalendarDays className="h-4 w-4 text-slate-500" />
             {cityName}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select
               aria-label="Escopo da otimização"
               value={optimizeScope}
@@ -132,7 +132,7 @@ export function ItineraryPanel({
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-6 md:py-4">
         {tab === "roteiro" ? (
           <div className="flex flex-col gap-6">
             {usedDates.length === 0 && (
