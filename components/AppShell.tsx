@@ -13,11 +13,12 @@ import {
   type Attraction,
 } from "@/lib/mock-data";
 import { fetchPlaceDetails, searchPlaces } from "@/lib/places-client";
+import { loadTrip, saveTrip } from "@/lib/trip-store";
 import {
+  applyStayEnrichment,
   defaultCities,
   defaultFlights,
   defaultStays,
-  stayDisplayName,
   type CityStay,
   type Flight,
   type Stay,
@@ -34,19 +35,55 @@ export function AppShell() {
   const [selectedId, setSelectedId] = useState(dayAttractions[0]?.id ?? "");
   const [mapView, setMapView] = useState<"macro" | string>("macro");
   const [optimizing, setOptimizing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const saved = loadTrip();
+    if (saved) {
+      setCities(saved.cities);
+      setFlights(saved.flights);
+      setStays(saved.stays);
+      if (saved.attractions.length) setAttractions(saved.attractions);
+    }
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    saveTrip({ cities, flights, stays, attractions });
+  }, [ready, cities, flights, stays, attractions]);
+
+  useEffect(() => {
+    if (!ready) return;
     let live = true;
     Promise.all(initialAttractions.map(enrichFromPlaces)).then((list) => {
-      if (live) setAttractions(list);
+      if (!live) return;
+      setAttractions((current) =>
+        current.map((item) => {
+          const extra = list.find((row) => row.id === item.id);
+          if (!extra) return item;
+          return {
+            ...item,
+            image: item.image || extra.image,
+            station: item.station || extra.station,
+            address: item.address || extra.address,
+            lat: item.lat || extra.lat,
+            lng: item.lng || extra.lng,
+            rating: item.rating || extra.rating,
+            userRatingCount: item.userRatingCount || extra.userRatingCount,
+            placeId: item.placeId || extra.placeId,
+          };
+        }),
+      );
     });
-    Promise.all(defaultStays.map(enrichStay)).then((list) => {
-      if (live) setStays(list);
+    Promise.all(stays.map(enrichStay)).then((list) => {
+      if (live) setStays((current) => applyStayEnrichment(current, list));
     });
     return () => {
       live = false;
     };
-  }, []);
+  }, [ready]);
 
   const city =
     view.kind === "city" ? cities.find((item) => item.id === view.id) : undefined;
@@ -65,13 +102,20 @@ export function AppShell() {
       return;
     }
     setView(next);
+    setMenuOpen(false);
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white">
-      <TopBar daysLeft={daysUntil(countdownStart)} />
-      <div className="flex min-h-0 flex-1">
-        <Sidebar cities={cities} view={view} onView={changeView} />
+    <div className="flex h-dvh flex-col overflow-hidden bg-white">
+      <TopBar daysLeft={daysUntil(countdownStart)} onMenu={() => setMenuOpen((open) => !open)} />
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <Sidebar
+          cities={cities}
+          view={view}
+          open={menuOpen}
+          onView={changeView}
+          onClose={() => setMenuOpen(false)}
+        />
         {view.kind === "overview" && (
           <OverviewPanel
             flights={flights}
@@ -107,17 +151,17 @@ export function AppShell() {
 }
 
 async function enrichStay(stay: Stay): Promise<Stay> {
-  if (stay.image || !stay.address) return stay;
+  if ((stay.image && stay.station) || !stay.address) return stay;
   const hits = await searchPlaces(stay.address);
   if (!hits[0]) return stay;
   const details = await fetchPlaceDetails(hits[0].placeId);
   if (!details) return stay;
   return {
     ...stay,
-    name: stayDisplayName(details.name || stay.name),
     image: details.image || stay.image,
-    lat: details.lat || stay.lat,
-    lng: details.lng || stay.lng,
+    lat: stay.lat || details.lat,
+    lng: stay.lng || details.lng,
+    station: details.station || stay.station,
   };
 }
 

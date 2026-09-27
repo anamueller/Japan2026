@@ -140,7 +140,7 @@ export function Dashboard({
   }
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <ItineraryPanel
         cityName={city.name}
         cityId={city.id}
@@ -165,6 +165,6 @@ export function Dashboard({
         onSelect={selectPin}
         onViewChange={changeView}
       />
-    </>
+    </div>
   );
 }

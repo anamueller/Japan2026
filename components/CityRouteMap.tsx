@@ -41,7 +41,7 @@ export function CityRouteMap({ cities }: { cities: CityStay[] }) {
   if (cities.length === 0) return null;
 
   return (
-    <div className="mt-4 h-72 overflow-hidden rounded-2xl border border-rose-100">
+    <div className="mt-4 h-56 overflow-hidden rounded-2xl border border-rose-100 md:h-72">
       {googleMapsKey ? (
         <GoogleDayMap
           apiKey={googleMapsKey}
