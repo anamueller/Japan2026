@@ -90,5 +90,6 @@ function cityPin(city: CityStay): Attraction {
     pinColor: "#bc002d",
     upvotes: 0,
     downvotes: 0,
+    description: "",
   };
 }

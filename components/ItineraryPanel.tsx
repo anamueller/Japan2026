@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { CalendarDays, Plus, Route } from "lucide-react";
+import { useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { CalendarDays, GripVertical, Plus, Route } from "lucide-react";
 import { AttractionCard } from "@/components/AttractionCard";
 import { AttractionEditor } from "@/components/AttractionEditor";
 import { formatDate, formatDateShort } from "@/lib/dates";
@@ -26,6 +26,7 @@ type ItineraryPanelProps = {
   onDelete: (id: string) => void;
   onOptimize: (scope: "all" | string) => void;
   onStartFrom: (id: string) => void;
+  onReorder: (date: string, fromId: string, toId: string) => void;
 };
 
 export function ItineraryPanel({
@@ -40,15 +41,45 @@ export function ItineraryPanel({
   onDelete,
   onOptimize,
   onStartFrom,
+  onReorder,
   optimizing = false,
 }: ItineraryPanelProps) {
   const [tab, setTab] = useState<Tab>("roteiro");
   const [adding, setAdding] = useState(false);
   const [optimizeScope, setOptimizeScope] = useState("all");
+  const [overId, setOverId] = useState<string | null>(null);
+  const overRef = useRef<string | null>(null);
+  const drag = useRef<{ id: string; date: string } | null>(null);
 
   const scheduled = attractions.filter((item) => item.date !== null);
   const ideas = attractions.filter((item) => item.date === null);
   const usedDates = [...new Set(scheduled.map((item) => item.date!))].sort();
+
+  function startDrag(date: string, id: string, event: PointerEvent<HTMLButtonElement>) {
+    drag.current = { id, date };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveDrag(event: PointerEvent<HTMLButtonElement>) {
+    if (!drag.current) return;
+    const node = document.elementFromPoint(event.clientX, event.clientY);
+    const over = node?.closest("[data-place-id]") as HTMLElement | null;
+    if (over?.dataset.date === drag.current.date && over.dataset.placeId) {
+      overRef.current = over.dataset.placeId;
+      setOverId(over.dataset.placeId);
+    }
+  }
+
+  function endDrag() {
+    const current = drag.current;
+    const toId = overRef.current;
+    drag.current = null;
+    overRef.current = null;
+    if (current && toId && toId !== current.id) {
+      onReorder(current.date, current.id, toId);
+    }
+    setOverId(null);
+  }
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-jp-paper">
@@ -148,16 +179,37 @@ export function ItineraryPanel({
                 {scheduled
                   .filter((item) => item.date === date)
                   .map((attraction) => (
-                    <AttractionCard
+                    <div
                       key={attraction.id}
-                      attraction={attraction}
-                      focused={attraction.id === selectedId}
-                      dates={dates}
-                      onFocus={onFocus}
-                      onSave={onSave}
-                      onDelete={onDelete}
-                      onStartFrom={onStartFrom}
-                    />
+                      data-place-id={attraction.id}
+                      data-date={date}
+                      className={`flex items-stretch gap-1 ${
+                        overId === attraction.id ? "rounded-xl ring-2 ring-jp-red/30" : ""
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        aria-label={`Arrastar ${attraction.name}`}
+                        className="touch-none shrink-0 self-stretch rounded-lg px-0.5 text-slate-300 hover:bg-white hover:text-slate-500"
+                        onPointerDown={(event) => startDrag(date, attraction.id, event)}
+                        onPointerMove={moveDrag}
+                        onPointerUp={endDrag}
+                        onPointerCancel={endDrag}
+                      >
+                        <GripVertical className="h-4 w-4" />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <AttractionCard
+                          attraction={attraction}
+                          focused={attraction.id === selectedId}
+                          dates={dates}
+                          onFocus={onFocus}
+                          onSave={onSave}
+                          onDelete={onDelete}
+                          onStartFrom={onStartFrom}
+                        />
+                      </div>
+                    </div>
                   ))}
               </section>
             ))}

@@ -6,6 +6,7 @@ import { eachDate } from "@/lib/dates";
 import { fetchGoogleRoute } from "@/lib/google-route";
 import {
   applyDraft,
+  reorderById,
   replaceDateOrder,
   type Attraction,
   type AttractionDraft,
@@ -131,6 +132,14 @@ export function Dashboard({
     }
   }
 
+  function reorder(date: string, fromId: string, toId: string) {
+    const day = attractions.filter(
+      (item) => item.cityId === city.id && item.date === date,
+    );
+    onAttractions(replaceDateOrder(attractions, date, reorderById(day, fromId, toId)));
+    onMapView(date);
+  }
+
   function startFrom(id: string) {
     const item = attractions.find((attraction) => attraction.id === id);
     if (!item?.date) return;
@@ -154,6 +163,7 @@ export function Dashboard({
         onDelete={remove}
         onOptimize={optimize}
         onStartFrom={startFrom}
+        onReorder={reorder}
       />
       <MapPanel
         attractions={mapAttractions}
