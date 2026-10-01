@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CitySetup } from "@/components/CitySetup";
 import { Dashboard } from "@/components/Dashboard";
 import { OverviewPanel } from "@/components/OverviewPanel";
@@ -13,7 +13,7 @@ import {
   type Attraction,
 } from "@/lib/mock-data";
 import { fetchPlaceDetails, searchPlaces } from "@/lib/places-client";
-import { loadTrip, saveTrip } from "@/lib/trip-store";
+import { fetchSharedTrip, loadTrip, publishSharedTrip, saveTrip } from "@/lib/trip-store";
 import {
   applyStayEnrichment,
   defaultCities,
@@ -37,21 +37,39 @@ export function AppShell() {
   const [optimizing, setOptimizing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const skipShare = useRef(false);
 
   useEffect(() => {
-    const saved = loadTrip();
-    if (saved) {
-      setCities(saved.cities);
-      setFlights(saved.flights);
-      setStays(saved.stays);
-      if (saved.attractions.length) setAttractions(saved.attractions);
-    }
-    setReady(true);
+    let live = true;
+    (async () => {
+      const remote = await fetchSharedTrip();
+      const saved = remote ?? loadTrip();
+      if (saved && live) {
+        setCities(saved.cities);
+        setFlights(saved.flights);
+        setStays(saved.stays);
+        if (saved.attractions.length) setAttractions(saved.attractions);
+      }
+      skipShare.current = Boolean(remote);
+      if (live) setReady(true);
+    })();
+    return () => {
+      live = false;
+    };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
-    saveTrip({ cities, flights, stays, attractions });
+    const trip = { cities, flights, stays, attractions };
+    saveTrip(trip);
+    if (skipShare.current) {
+      skipShare.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      void publishSharedTrip(trip);
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [ready, cities, flights, stays, attractions]);
 
   useEffect(() => {

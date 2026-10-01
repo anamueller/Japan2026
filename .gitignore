@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# roteiro local (o compartilhado vai pelo GitHub)
+/data/trip.json
