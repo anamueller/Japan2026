@@ -1,29 +1,30 @@
-const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-const SHORT_FMT = new Intl.DateTimeFormat("pt-BR", {
-  weekday: "short",
-  day: "2-digit",
-  month: "short",
-  timeZone: "UTC",
-});
+const MONTHS = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."];
+const WEEKDAYS = ["dom.", "seg.", "ter.", "qua.", "qui.", "sex.", "sáb."];
 
 export function formatDate(iso: string): string {
-  return DATE_FMT.format(new Date(`${iso}T00:00:00Z`));
+  const [year, month, day] = iso.split("-");
+  return `${Number(day)} de ${MONTHS[Number(month) - 1]} de ${year}`;
 }
 
 export function formatDateShort(iso: string): string {
-  return SHORT_FMT.format(new Date(`${iso}T00:00:00Z`));
+  const [, month, day] = iso.split("-");
+  const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
+  return `${WEEKDAYS[weekday]} ${Number(day)} de ${MONTHS[Number(month) - 1]}`;
+}
+
+function calendarDate(from: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(from);
 }
 
 export function daysUntil(iso: string, from = new Date()): number {
-  const start = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  const start = Date.parse(`${calendarDate(from, "America/Sao_Paulo")}T00:00:00Z`);
   const target = Date.parse(`${iso}T00:00:00Z`);
-  return Math.ceil((target - start) / 86_400_000);
+  return Math.round((target - start) / 86_400_000);
 }
 
 export function calendarDaysBetween(start: string, end: string): number {

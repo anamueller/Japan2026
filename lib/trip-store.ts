@@ -47,11 +47,17 @@ export async function fetchSharedTrip(): Promise<SavedTrip | null> {
   return parseTrip(await response.json());
 }
 
-export async function publishSharedTrip(trip: SavedTrip): Promise<boolean> {
-  const response = await fetch("/api/trip", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(trip),
-  });
-  return response.ok;
+export async function publishSharedTrip(trip: SavedTrip): Promise<string | null> {
+  try {
+    const response = await fetch("/api/trip", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(trip),
+    });
+    if (response.ok) return null;
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    return body?.error ?? `HTTP ${response.status}`;
+  } catch (error) {
+    return error instanceof Error ? error.message : "falha ao publicar";
+  }
 }
