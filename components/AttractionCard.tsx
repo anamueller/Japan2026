@@ -138,6 +138,7 @@ export function AttractionCard({
               value={attraction.rating}
               count={attraction.userRatingCount}
             />
+            <PlaceNote text={attraction.description ?? ""} />
             <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-600">
               <span className="inline-flex items-center gap-1">
                 <CalendarDays className="h-3 w-3 text-slate-400" />
@@ -214,6 +215,33 @@ export function AttractionCard({
         </div>
       )}
     </article>
+  );
+}
+
+function PlaceNote({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const note = text.trim();
+  if (!note) return null;
+  const long = note.length > 90;
+  return (
+    <div className="mt-1.5">
+      <p
+        className={`text-[11px] leading-snug text-slate-600 ${
+          open || !long ? "" : "line-clamp-2"
+        }`}
+      >
+        {note}
+      </p>
+      {long ? (
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="mt-0.5 text-[11px] font-medium text-jp-red hover:underline"
+        >
+          {open ? "ver menos" : "ver mais"}
+        </button>
+      ) : null}
+    </div>
   );
 }
 

@@ -20,8 +20,11 @@ export function loadTrip(): SavedTrip | null {
     return {
       cities: parsed.cities,
       flights: parsed.flights,
-      stays: parsed.stays,
-      attractions: parsed.attractions ?? [],
+      stays: parsed.stays.map((stay) => ({ ...stay, station: stay.station ?? "" })),
+      attractions: (parsed.attractions ?? []).map((item) => ({
+        ...item,
+        description: item.description ?? "",
+      })),
     };
   } catch {
     return null;

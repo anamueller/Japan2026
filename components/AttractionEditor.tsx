@@ -67,12 +67,13 @@ export function AttractionEditor({
       lng: details.lng,
       category: details.category,
       categoryEmoji: details.categoryEmoji,
+      description: current.description || details.reviewSnippet,
     }));
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!draft.placeId || !draft.name.trim()) return;
+    if (!draft.name.trim() || (!draft.placeId && !initial.name)) return;
     onSubmit({ ...draft, name: draft.name.trim() });
   }
 
@@ -165,6 +166,19 @@ export function AttractionEditor({
         </label>
       </div>
 
+      <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+        Descrição
+        <textarea
+          value={draft.description}
+          onChange={(event) =>
+            setDraft((current) => ({ ...current, description: event.target.value }))
+          }
+          placeholder="Uma nota curta sobre o lugar..."
+          rows={3}
+          className={`${fieldClass} resize-y`}
+        />
+      </label>
+
       <div className="flex justify-end gap-2">
         <button
           type="button"
@@ -175,7 +189,7 @@ export function AttractionEditor({
         </button>
         <button
           type="submit"
-          disabled={!draft.placeId}
+          disabled={!draft.name.trim() || (!draft.placeId && !initial.name)}
           className="rounded-xl bg-jp-red px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
           {submitLabel}

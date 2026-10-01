@@ -19,6 +19,7 @@ export type Attraction = {
   pinColor: string;
   upvotes: number;
   downvotes: number;
+  description: string;
 };
 
 export type AttractionDraft = {
@@ -37,6 +38,7 @@ export type AttractionDraft = {
   lng: number;
   category: string;
   categoryEmoji: string;
+  description: string;
 };
 
 export const dayAttractions: Attraction[] = [
@@ -62,6 +64,7 @@ export const dayAttractions: Attraction[] = [
     pinColor: "#f43f5e",
     upvotes: 8,
     downvotes: 1,
+    description: "",
   },
   {
     id: "shibuya-sky",
@@ -85,6 +88,7 @@ export const dayAttractions: Attraction[] = [
     pinColor: "#f59e0b",
     upvotes: 6,
     downvotes: 0,
+    description: "",
   },
   {
     id: "tsukiji",
@@ -108,6 +112,7 @@ export const dayAttractions: Attraction[] = [
     pinColor: "#0ea5e9",
     upvotes: 5,
     downvotes: 2,
+    description: "",
   },
   {
     id: "ueno",
@@ -131,6 +136,7 @@ export const dayAttractions: Attraction[] = [
     pinColor: "#8b5cf6",
     upvotes: 4,
     downvotes: 1,
+    description: "",
   },
 ];
 
@@ -157,6 +163,7 @@ export const ideaCards: Attraction[] = [
     pinColor: "#94a3b8",
     upvotes: 3,
     downvotes: 0,
+    description: "",
   },
 ];
 
@@ -180,6 +187,7 @@ export function emptyAttractionDraft(
     lng: 139.7671,
     category: "Passeio",
     categoryEmoji: "📍",
+    description: "",
   };
 }
 
@@ -200,6 +208,7 @@ export function attractionToDraft(attraction: Attraction): AttractionDraft {
     lng: attraction.lng,
     category: attraction.category,
     categoryEmoji: attraction.categoryEmoji,
+    description: attraction.description ?? "",
   };
 }
 
@@ -228,6 +237,7 @@ export function applyDraft(
     pinColor: current?.pinColor ?? "#64748b",
     upvotes: current?.upvotes ?? 0,
     downvotes: current?.downvotes ?? 0,
+    description: draft.description.trim(),
   };
 }
 
@@ -250,4 +260,18 @@ export function replaceDateOrder(
   }
   if (!inserted) result.push(...ordered);
   return result;
+}
+
+export function reorderById<T extends { id: string }>(
+  items: T[],
+  fromId: string,
+  toId: string,
+): T[] {
+  const from = items.findIndex((item) => item.id === fromId);
+  const to = items.findIndex((item) => item.id === toId);
+  if (from < 0 || to < 0 || from === to) return items;
+  const next = [...items];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
 }
