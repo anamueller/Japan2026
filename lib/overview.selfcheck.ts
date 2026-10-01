@@ -1,7 +1,8 @@
 import { formatDurationSeconds, fallbackHop } from "@/lib/transit";
 import { climateLabel, weatherEmoji, shiftYear, mapDaily } from "@/lib/weather";
 import { cacheGet, cacheKey, cacheSet } from "@/lib/google-cache";
-import { airportCountry, applyStayEnrichment, buildFlightDays, defaultFlights, defaultStays, nextConnection, stayDisplayName, travelerHeader } from "@/lib/trip";
+import { parseTrip } from "@/lib/trip-store";
+import { airportCountry, applyStayEnrichment, buildFlightDays, defaultCities, defaultFlights, defaultStays, nextConnection, stayDisplayName, travelerHeader } from "@/lib/trip";
 import { formatClock, formatDayMonth, formatNumericDate, formatStayRange } from "@/lib/dates";
 
 if (weatherEmoji(0) !== "☀️") throw new Error("clear sky emoji");
@@ -86,5 +87,9 @@ if (travelerHeader("Manu").background !== "#92400e") throw new Error("manu color
 const key = cacheKey({ a: 1 });
 cacheSet(key, { ok: true });
 if (!cacheGet<{ ok: boolean }>(key)?.ok) throw new Error("cache");
+if (!parseTrip({ cities: defaultCities, flights: defaultFlights, stays: defaultStays })) {
+  throw new Error("parse trip");
+}
+if (parseTrip({ cities: [] })) throw new Error("parse trip empty");
 
 console.log("overview.selfcheck ok");
