@@ -17,8 +17,8 @@ function repo(): string {
   return process.env.TRIP_GITHUB_REPO?.trim() || "anamueller/japan2026";
 }
 
-export async function readSharedTrip(): Promise<SavedTrip | null> {
-  const remote = await readGithub();
+export async function readSharedTrip(accessToken = token()): Promise<SavedTrip | null> {
+  const remote = await readGithub(accessToken);
   if (remote) return remote;
   try {
     return parseTrip(JSON.parse(await readFile(FILE, "utf8")));
@@ -27,21 +27,20 @@ export async function readSharedTrip(): Promise<SavedTrip | null> {
   }
 }
 
-export async function writeSharedTrip(trip: SavedTrip): Promise<void> {
+export async function writeSharedTrip(trip: SavedTrip, accessToken = token()): Promise<void> {
   // ponytail: no Vercel o FS do projeto é só leitura; /tmp existiria, mas o GitHub é a fonte.
   if (!process.env.VERCEL) {
     await mkdir(path.dirname(FILE), { recursive: true });
     await writeFile(FILE, `${JSON.stringify(trip)}\n`, "utf8");
   }
-  if (token()) {
-    await writeGithub(trip);
+  if (accessToken) {
+    await writeGithub(trip, accessToken);
     return;
   }
   if (process.env.VERCEL) throw new Error("missing token");
 }
 
-async function readGithub(): Promise<SavedTrip | null> {
-  const key = token();
+async function readGithub(key: string): Promise<SavedTrip | null> {
   const response = await fetch(
     `https://api.github.com/repos/${repo()}/contents/${REPO_PATH}`,
     {
@@ -56,8 +55,7 @@ async function readGithub(): Promise<SavedTrip | null> {
   return parseTrip(JSON.parse(Buffer.from(payload.content, "base64").toString("utf8")));
 }
 
-async function writeGithub(trip: SavedTrip): Promise<void> {
-  const key = token();
+async function writeGithub(trip: SavedTrip, key: string): Promise<void> {
   const url = `https://api.github.com/repos/${repo()}/contents/${REPO_PATH}`;
   const current = await fetch(url, { headers: githubHeaders(key), cache: "no-store" });
   const sha = current.ok
@@ -72,7 +70,8 @@ async function writeGithub(trip: SavedTrip): Promise<void> {
     body: JSON.stringify({
       message: "chore: atualiza roteiro compartilhado",
       content: Buffer.from(`${JSON.stringify(trip)}\n`).toString("base64"),
-      sha,
+      branch: "main",
+      ...(sha ? { sha } : {}),
     }),
   });
   if (!response.ok) {

@@ -23,7 +23,7 @@ export function TopBar({ daysLeft, onMenu }: TopBarProps) {
         Japan 2026
         <CountryFlag iso="JP" className="h-4 w-6" title="Japão" />
       </h1>
-      <p className="min-w-12 text-right text-xs text-white/80 md:text-sm">
+      <p className="min-w-12 text-right text-xs text-white/80 md:text-sm" suppressHydrationWarning>
         <span className="font-semibold text-white">{daysLeft}</span> Dias
       </p>
     </header>

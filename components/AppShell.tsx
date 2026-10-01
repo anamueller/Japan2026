@@ -37,6 +37,7 @@ export function AppShell() {
   const [optimizing, setOptimizing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
   const skipShare = useRef(false);
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export function AppShell() {
       return;
     }
     const timer = setTimeout(() => {
-      void publishSharedTrip(trip);
+      void publishSharedTrip(trip).then(setShareError);
     }, 1000);
     return () => clearTimeout(timer);
   }, [ready, cities, flights, stays, attractions]);
@@ -126,6 +127,11 @@ export function AppShell() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-white">
       <TopBar daysLeft={daysUntil(countdownStart)} onMenu={() => setMenuOpen((open) => !open)} />
+      {shareError ? (
+        <p className="shrink-0 bg-red-50 px-3 py-1 text-center text-xs text-red-700">
+          Não deu para gravar o roteiro compartilhado: {shareError}
+        </p>
+      ) : null}
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <Sidebar
           cities={cities}
