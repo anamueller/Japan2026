@@ -13,7 +13,8 @@ export async function PUT(request: Request) {
   try {
     await writeSharedTrip(trip);
     return Response.json({ ok: true });
-  } catch {
-    return Response.json({ error: "write failed" }, { status: 502 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "write failed";
+    return Response.json({ error: message }, { status: 502 });
   }
 }
