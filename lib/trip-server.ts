@@ -28,8 +28,11 @@ export async function readSharedTrip(): Promise<SavedTrip | null> {
 }
 
 export async function writeSharedTrip(trip: SavedTrip): Promise<void> {
-  await mkdir(path.dirname(FILE), { recursive: true });
-  await writeFile(FILE, `${JSON.stringify(trip)}\n`, "utf8");
+  // ponytail: no Vercel o FS do projeto é só leitura; /tmp existiria, mas o GitHub é a fonte.
+  if (!process.env.VERCEL) {
+    await mkdir(path.dirname(FILE), { recursive: true });
+    await writeFile(FILE, `${JSON.stringify(trip)}\n`, "utf8");
+  }
   if (token()) {
     await writeGithub(trip);
     return;
@@ -73,7 +76,8 @@ async function writeGithub(trip: SavedTrip): Promise<void> {
     }),
   });
   if (!response.ok) {
-    throw new Error(`github write ${response.status}`);
+    const detail = (await response.text()).slice(0, 200);
+    throw new Error(`github write ${response.status}: ${detail}`);
   }
 }
 
